@@ -1,0 +1,46 @@
+{
+  "name": "shadowkube-repro",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "none",
+      "minikube": "none"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  // Needed for eBPF probes (Phase 2) to have any chance of attaching -- also
+  // required by k3d's node containers internally regardless.
+  "runArgs": ["--privileged"],
+
+  "postCreateCommand": "bash .devcontainer/postcreate.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "ms-python.python"
+      ]
+    }
+  },
+
+  "forwardPorts": [30080, 30081],
+  "portsAttributes": {
+    "30080": { "label": "prod-cluster: weather-app frontend" },
+    "30081": { "label": "shadow-cluster: weather-app frontend (decoy)" }
+  }
+}

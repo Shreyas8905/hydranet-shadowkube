@@ -1,0 +1,46 @@
+# Standalone pods that reproduce the remaining Table 2 misconfigurations not
+# already covered by the app deployment (privileged pods, mounted sensitive
+# host directories). These are the kind of "legacy debug" pods real clusters
+# accumulate and that ShadowKube's monitoring is meant to catch attackers
+# abusing.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: legacy-debug-privileged
+  namespace: dev-namespace
+  labels:
+    app: legacy-debug
+    group: legacy-debug        # separate baseline group from weather-app
+spec:
+  serviceAccountName: weather-app-sa
+  containers:
+    - name: debug
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      securityContext:
+        privileged: true        # Table 2: "Enabled privileged"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: legacy-debug-hostmount
+  namespace: dev-namespace
+  labels:
+    app: legacy-debug
+    group: legacy-debug
+spec:
+  serviceAccountName: weather-app-sa
+  containers:
+    - name: debug
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      volumeMounts:
+        - name: hostroot
+          mountPath: /host
+  volumes:
+    - name: hostroot
+      hostPath:
+        path: /             # Table 2: "mounted sensitive directory"
+          # This grants any attacker who compromises this pod access to
+          # host resources, enabling potential privilege escalation.

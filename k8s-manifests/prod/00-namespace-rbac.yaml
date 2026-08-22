@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-namespace
+  labels:
+    group: weather-app       # used by ShadowKube's behavioral grouping (Table 1)
+---
+# --- INJECTED MISCONFIG (paper's motivating example, Introduction section) ---
+# A role named "developer-role" that erroneously confers cluster-wide edit
+# privileges instead of being scoped to dev-namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: developer-role
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: weather-app-sa
+  namespace: dev-namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: developer-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: weather-app-sa
+    namespace: dev-namespace
+roleRef:
+  kind: ClusterRole
+  name: developer-role
+  apiGroup: rbac.authorization.k8s.io
+# --------------------------------------------------------------------------
