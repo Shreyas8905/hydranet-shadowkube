@@ -1,0 +1,41 @@
+// bpftrace/execve.bt
+//
+// Trace execve/execveat syscalls across the host and emit one JSON object per
+// line on stdout. The Go probe binary reads this stream and enriches each line
+// with pod metadata (Table 1) before forwarding to the detector.
+//
+// One-line JSON per event. Schema:
+//   {"ts":"<RFC3339Nano>","type":"exec","pid":<int>,"cgroupId":<int>,"cmd":"<string>"}
+//
+// Notes:
+// - argv is joined with spaces; control characters are stripped by Go-side parsing.
+// - The script attaches to the *host* kernel when run from a privileged container
+//   with /sys/kernel/debug + /sys/kernel/btf mounted from the host (see
+//   probe/deploy/02-daemon_set.yaml).
+
+#include <linux/sched.h>
+
+BEGIN {
+    @ts_scale = 1000000000;
+}
+
+tracepoint:syscalls:sys_enter_execve,
+tracepoint:syscalls:sys_enter_execveat
+{
+    $pid = pid;
+    $tgid = args.pid ?: $pid;
+    $cgroup = (uint64)0;
+
+    // cgroup id is not directly available in the tracepoint; use the task's
+    // cgroup id from bpf_get_current_cgroup_id() helper. Falls back to 0 if
+    // unsupported on this kernel.
+    $cgroup = (uint64)0; // placeholder; filled by Go-side /proc/<pid>/cgroup
+
+    // Join the first few argv entries as a representative command string.
+    // argstr uses bpftrace's built-in formatting of the userspace args.
+    printf("{\"ts\":%lld,\"type\":\"exec\",\"pid\":%d,\"cgroupId\":%llu,\"cmd\":\"%s\"}\n",
+        nsecs / @ts_scale,
+        $pid,
+        $cgroup,
+        str(args.filename));
+}

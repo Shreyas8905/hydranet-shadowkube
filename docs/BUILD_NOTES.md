@@ -1,5 +1,33 @@
 # Building & loading the weather-app image (Codespaces / k3d)
 
+## Phase 2: also build & load the probe image
+
+Once you've finished the Phase 1 instructions below, also build the probe
+image and load it into the **prod** cluster only (the shadow cluster doesn't
+need a probe — it's the destination, not the source, of behavioral data):
+
+```bash
+cd probe
+docker build -t weather-app-probe:lab .
+k3d image import weather-app-probe:lab -c prod-cluster
+```
+
+Then apply the probe manifests on prod:
+
+```bash
+kubectl --context k3d-prod-cluster apply -f probe/deploy/
+kubectl --context k3d-prod-cluster -n shadowkube-probe get pods -w
+```
+
+The probe defaults to `PROBE_DRY_RUN=true`, so it will print enriched events
+to stdout (visible via `kubectl logs`) instead of POSTing anywhere — this lets
+you verify Phase 2 without a detector. See `probe/README.md` for the full
+verification procedure and for flipping to live mode when Phase 3 lands.
+
+---
+
+# Building & loading the weather-app image (Codespaces / k3d)
+
 Run this once the Codespace has finished `postcreate.sh` (both k3d clusters
 already exist at that point).
 

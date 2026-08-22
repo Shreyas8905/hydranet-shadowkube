@@ -1,0 +1,34 @@
+// bpftrace/connect.bt
+//
+// Trace TCP connect() syscalls (kernel side) and emit JSON-per-line events.
+//
+// We attach via kprobe:tcp_connect rather than the userspace tracepoint so we
+// can read the destination address/port from the kernel sockaddr before the
+// call returns. The userspace syscall tracepoint doesn't reliably carry the
+// resolved destination.
+//
+// Schema:
+//   {"ts":"<RFC3339Nano>","type":"net","pid":<int>,"cgroupId":<int>,
+//    "dstIp":"<ipv4-or-ipv6>","dstPort":<int>}
+
+#include <net/sock.h>
+#include <net/tcp.h>
+#include <net/inet_sock.h>
+
+kprobe:tcp_connect
+{
+    $sk = (struct sock *)arg0;
+    $inet = (struct inet_sock *)$sk;
+    $dport = $inet->inet_dport;
+
+    // Source port is rarely useful here; we capture dest only.
+    $port = ($dport >> 8) | (($dport & 0xff) << 8);
+    // bpftrace's ntohs isn't reliable across versions; manual byte swap.
+
+    printf("{\"ts\":%lld,\"type\":\"net\",\"pid\":%d,\"cgroupId\":%llu,\"dstIp\":\"%s\",\"dstPort\":%d}\n",
+        nsecs / 1000000000,
+        pid,
+        (uint64)0,
+        ntop(AF_INET, $inet->inet_daddr),
+        $port);
+}

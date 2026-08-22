@@ -6,12 +6,12 @@ Cybersecurity 2025), built to run entirely in a **GitHub Codespace**
 (4-core/16GB), using two k3d (k3s-in-Docker) clusters to simulate the
 paper's production/shadow cluster split.
 
-## Status: Phase 1 complete (topology + vulnerable app + misconfigs)
+## Status: Phase 2 complete (behavioral probe)
 
 | Phase | What it covers | Status |
 |---|---|---|
-| 1 | Devcontainer, k3d prod/shadow clusters, vulnerable weather-app, Table 2 misconfigs, shadow decoys | ✅ this drop |
-| 2 | eBPF (bpftrace) or auditd-fallback probe -> event agent shipping to detector | next |
+| 1 | Devcontainer, k3d prod/shadow clusters, vulnerable weather-app, Table 2 misconfigs, shadow decoys | ✅ |
+| 2 | eBPF (bpftrace) or auditd-fallback probe -> event agent shipping to detector | ✅ this drop |
 | 3 | Detector: Algorithm 1 (LCS baseline) + Algorithm 2 (Levenshtein online detection) | next |
 | 4 | Actuator: strategy selection + 3-phase honeypot conversion (redirect + sanitize + rotate secrets) | next |
 | 5 | Attack simulation (Case Study 1 & 2 style) + Table 6-style timing evaluation | next |
@@ -22,7 +22,7 @@ paper's production/shadow cluster split.
 .devcontainer/        devcontainer.json + postcreate.sh (installs k3d, creates both clusters)
 k8s-manifests/prod/    Vulnerable weather-app source + k8s manifests + Table 2 misconfigs
 k8s-manifests/shadow/  Shadow-cluster decoy manifests (identical names, bait secrets)
-probe/                 (Phase 2) eBPF/bpftrace or auditd-fallback behavior probe
+probe/                 eBPF/bpftrace or auditd-fallback behavior probe (Go) -> NDJSON to detector
 detector/               (Phase 3) Algorithm 1 & 2 implementation
 actuator/               (Phase 4) Strategy selection + honeypot transformation
 attack-sim/             (Phase 5) Exploit scripts reproducing the paper's case studies

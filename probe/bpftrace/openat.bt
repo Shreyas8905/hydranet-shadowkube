@@ -1,0 +1,27 @@
+// bpftrace/openat.bt
+//
+// Trace openat syscalls and emit one JSON object per line.
+// Schema:
+//   {"ts":"<RFC3339Nano>","type":"file","pid":<int>,"cgroupId":<int>,
+//    "path":"<string>","fileOp":"read|write|open"}
+//
+// Only file access events on *non-tmp* paths are interesting per the paper
+// (the detector will later filter further). We emit all openat events and let
+// the Go side filter to keep the bpftrace script readable.
+
+tracepoint:syscalls:sys_enter_openat
+{
+    $flags = args.flags;
+    // O_WRONLY=1, O_RDWR=2, O_CREAT=64, O_APPEND=1024, O_TRUNC=512
+    $op = "open";
+    if (($flags & 3) != 0) {
+        $op = ($flags & 1) ? "write" : "read";
+    }
+
+    printf("{\"ts\":%lld,\"type\":\"file\",\"pid\":%d,\"cgroupId\":%llu,\"path\":\"%s\",\"fileOp\":\"%s\"}\n",
+        nsecs / 1000000000,
+        pid,
+        (uint64)0,
+        str(args.filename),
+        $op);
+}

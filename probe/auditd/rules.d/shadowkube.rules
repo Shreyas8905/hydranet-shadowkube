@@ -1,0 +1,29 @@
+# ShadowKube auditd rules (fallback backend).
+#
+# These rules are loaded via `auditctl -R` by the probe at startup. They match
+# the three syscall categories the paper's behavioral baseline covers:
+#   - execve       (command execution)
+#   - openat       (file access)
+#   - connect      (network connection)
+#
+# The `key=` field is what the probe matches on when parsing audit.log.
+# Tag each rule with `shadowkube-<category>` so other rules coexist.
+
+# Buffer: enough for high syscall rates on busy nodes.
+-b 8192
+
+# Failure-mode flag: 1 = print failure events too (helps when debugging).
+-f 1
+
+# --- execve (command execution) ---
+-a always,exit -F arch=b64 -S execve -k shadowkube-exec
+-a always,exit -F arch=b64 -S execveat -k shadowkube-exec
+
+# --- openat (file access) ---
+-a always,exit -F arch=b64 -S openat -k shadowkube-file
+
+# --- connect (network) ---
+# connect is on x86_64 syscall number 42. The destination addr/port is in a
+# separate AUDIT_SOCKADDR auxiliary record; the probe (intentionally) uses
+# only the SYSCALL record for now.
+-a always,exit -F arch=b64 -S connect -k shadowkube-net

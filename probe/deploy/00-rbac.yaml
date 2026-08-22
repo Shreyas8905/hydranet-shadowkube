@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shadowkube-probe
+  labels:
+    app: shadowkube-probe
+---
+# The probe needs read-only access to pods (and their pod-level metadata) so
+# the enricher can map cgroup IDs to Table 1 metadata. It does NOT need
+# secrets, exec, or any write permissions.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shadowkube-probe
+  namespace: shadowkube-probe
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: shadowkube-probe
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: shadowkube-probe
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: shadowkube-probe
+subjects:
+  - kind: ServiceAccount
+    name: shadowkube-probe
+    namespace: shadowkube-probe
