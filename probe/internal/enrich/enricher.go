@@ -38,7 +38,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 )
 
 // Enricher maintains a cache of pod UID -> PodMeta and looks up PodMeta for

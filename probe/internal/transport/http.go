@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 )
 
 // Transport is the abstract sink for events.

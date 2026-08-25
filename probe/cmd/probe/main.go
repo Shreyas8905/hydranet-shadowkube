@@ -30,7 +30,7 @@ import (
 	"github.com/shadowkube-repro/probe/internal/backend"
 	"github.com/shadowkube-repro/probe/internal/config"
 	"github.com/shadowkube-repro/probe/internal/enrich"
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 	"github.com/shadowkube-repro/probe/internal/transport"
 )
 

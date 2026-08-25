@@ -10,7 +10,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 )
 
 // ErrUnavailable is returned by a backend that cannot run on the current host

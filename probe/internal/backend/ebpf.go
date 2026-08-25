@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 )
 
 const btfPath = "/sys/kernel/btf/vmlinux"

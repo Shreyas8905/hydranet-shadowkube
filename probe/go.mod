@@ -3,10 +3,13 @@ module github.com/shadowkube-repro/probe
 go 1.22.0
 
 require (
+	github.com/shadowkube-repro/pkg v0.0.0
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.30.0
 )
+
+replace github.com/shadowkube-repro/pkg => ../pkg
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

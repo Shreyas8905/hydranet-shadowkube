@@ -28,7 +28,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shadowkube-repro/probe/internal/event"
+	"github.com/shadowkube-repro/pkg/event"
 )
 
 const defaultAuditLog = "/var/log/audit/audit.log"

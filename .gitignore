@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 *.log
+
+# Claude Code session-local state (CLAUDE.md, MEMORY.md, settings.local.json).
+# Project-specific context for the AI assistant; not for source control.
+.claude/
