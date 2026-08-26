@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shadowkube-system
+  labels:
+    app: shadowkube-detector
+---
+# Single-replica detector Deployment behind a ClusterIP Service.
+# HA would need leader election + per-replica scoring slices; overkill for
+# the lab.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowkube-detector
+  namespace: shadowkube-system
+  labels:
+    app: shadowkube-detector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadowkube-detector
+  template:
+    metadata:
+      labels:
+        app: shadowkube-detector
+    spec:
+      # No privileged mode, no host network — the detector is a normal
+      # long-running HTTP server. It does NOT touch the host kernel.
+      containers:
+        - name: detector
+          image: shadowkube-detector:lab
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: shadowkube-detector-config
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: baselines
+              mountPath: /var/lib/shadowkube/baselines
+            - name: eventlog
+              mountPath: /var/log/shadowkube
+      volumes:
+        - name: baselines
+          # For the lab we use hostPath so baselines survive restarts and
+          # are easy to inspect from outside the cluster. In a real
+          # deployment this would be a PVC.
+          hostPath:
+            path: /var/lib/shadowkube/baselines
+            type: DirectoryOrCreate
+        - name: eventlog
+          hostPath:
+            path: /var/log/shadowkube
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shadowkube-detector
+  namespace: shadowkube-system
+  labels:
+    app: shadowkube-detector
+spec:
+  type: ClusterIP
+  selector:
+    app: shadowkube-detector
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

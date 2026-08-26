@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shadowkube-detector-config
+  namespace: shadowkube-system
+data:
+  # Listen address inside the pod.
+  DETECTOR_ADDR: ":8080"
+
+  # Where baselines are persisted. Mounted as a hostPath volume from
+  # deploy/01-deployment.yaml so the directory survives pod restarts.
+  DETECTOR_BASELINE_DIR: "/var/lib/shadowkube/baselines"
+
+  # NDJSON log of every received event; baselinectl extract reads from
+  # this file for offline baseline seeding.
+  DETECTOR_LOG_PATH: "/var/log/shadowkube/events.ndjson"
+
+  # Window length Ti over which cumulative suspicion D is computed.
+  DETECTOR_TI: "60s"
+
+  # Alarm threshold L: when D > L, the detector fires.
+  DETECTOR_L: "3.0"
+
+  # Penalty x for ungroupable events (no Pod metadata).
+  DETECTOR_PENALTY_UNGROUP: "0.5"
+
+  # Penalty c for net events to destinations outside the group's peer set.
+  DETECTOR_PENALTY_NETBAD: "1.0"
+
+  # When true, baselines keep learning from new events. Set to false once
+  # the system has seen enough normal traffic and you want stable scoring.
+  DETECTOR_ALGO1_ONLINE: "true"
+
+  # Phase 4: webhook the detector POSTs alarm JSON to. Leave empty until
+  # the actuator exists; the detector will still log alarms in either case.
+  ACTUATOR_URL: "http://shadowkube-actuator.shadowkube-system.svc.cluster.local:8081/alarms"

@@ -1,28 +1,42 @@
 # Building & loading the weather-app image (Codespaces / k3d)
 
-## Phase 2: also build & load the probe image
+## Phase 3: also build & load the detector image
 
-Once you've finished the Phase 1 instructions below, also build the probe
-image and load it into the **prod** cluster only (the shadow cluster doesn't
-need a probe — it's the destination, not the source, of behavioral data):
-
-```bash
-cd probe
-docker build -t weather-app-probe:lab .
-k3d image import weather-app-probe:lab -c prod-cluster
-```
-
-Then apply the probe manifests on prod:
+Once you've finished the Phase 1 instructions below, also build the
+detector image and load it into the **prod** cluster:
 
 ```bash
-kubectl --context k3d-prod-cluster apply -f probe/deploy/
-kubectl --context k3d-prod-cluster -n shadowkube-probe get pods -w
+cd detector
+docker build -t shadowkube-detector:lab .
+k3d image import shadowkube-detector:lab -c prod-cluster
 ```
 
-The probe defaults to `PROBE_DRY_RUN=true`, so it will print enriched events
-to stdout (visible via `kubectl logs`) instead of POSTing anywhere — this lets
-you verify Phase 2 without a detector. See `probe/README.md` for the full
-verification procedure and for flipping to live mode when Phase 3 lands.
+Then apply the detector manifests:
+
+```bash
+kubectl --context k3d-prod-cluster apply -f detector/deploy/
+kubectl --context k3d-prod-cluster -n shadowkube-system get pods -w
+# Port-forward so you can curl it from the Codespace host:
+kubectl --context k3d-prod-cluster -n shadowkube-system port-forward svc/shadowkube-detector 8080:8080 &
+```
+
+Once the detector is reachable, flip the probe to live mode by editing
+`probe/deploy/01-config.yaml`:
+
+```yaml
+PROBE_DRY_RUN: "false"
+DETECTOR_URL: "http://shadowkube-detector.shadowkube-system.svc.cluster.local:8080/events"
+```
+
+Then restart the probe DaemonSet:
+
+```bash
+kubectl --context k3d-prod-cluster -n shadowkube-probe rollout restart ds shadowkube-probe
+```
+
+See `detector/README.md` for the alarm-trigger verification procedure and
+the offline `baselinectl extract` workflow for seeding baselines from
+historical probe output.
 
 ---
 

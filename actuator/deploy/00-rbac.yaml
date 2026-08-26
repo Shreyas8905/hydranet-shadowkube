@@ -1,0 +1,46 @@
+# ServiceAccount + ClusterRole + ClusterRoleBinding for the actuator.
+#
+# Permissions:
+#   - get/list/watch pods         (look up compromised pod + replicas)
+#   - delete pods                  (Phase 2 sanitation; DirectEliminate)
+#   - get/list nodes               (Phase 1 OtherNodes enumeration)
+#   - get secrets                  (Phase 3 marker file path; Phase 3 reads
+#                                  serviceaccount tokens — see README)
+#   - get/list configmaps          (read SHADOW_CLUSTER_IP if surfaced there)
+#   - create events                (audit trail; optional)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shadowkube-actuator
+  namespace: shadowkube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: shadowkube-actuator
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: shadowkube-actuator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: shadowkube-actuator
+subjects:
+  - kind: ServiceAccount
+    name: shadowkube-actuator
+    namespace: shadowkube-system

@@ -1,0 +1,31 @@
+# ConfigMap: runtime knobs for the actuator.
+#
+# NOTE: SHADOW_CLUSTER_IP is the address of the k3d-shadow-cluster-server-0
+# container on the shared `shadowkube-net` Docker network. The devcontainer
+# postcreate.sh writes the actual value here (or the operator sets it by
+# hand after `docker inspect k3d-shadow-cluster-server-0`).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shadowkube-actuator-config
+  namespace: shadowkube-system
+data:
+  ACTUATOR_ADDR: ":8081"
+  # Default: 20 minutes (paper's Case Studies); shorten for evaluation.
+  TEARDOWN_AFTER: "20m"
+  # Min node count for in-situ conversion. The lab has 2 nodes per cluster
+  # so 1 here makes ConvertInSitu the default; bump to 2 to exercise
+  # DirectEliminate during testing.
+  THRESHOLD_NODES: "1"
+  # SHADOW_CLUSTER_IP is filled in by the operator (see .devcontainer/postcreate.sh).
+  SHADOW_CLUSTER_IP: "REPLACE_ME_AFTER_DOCKER_INSPECT"
+  # Port the shadow cluster's frontend NodePort listens on. k3d maps prod's
+  # 30080 -> host:30080 and shadow's 30081 -> host:30081 because they share
+  # the host's port range.
+  SHADOW_SERVICE_PORT: "30081"
+  # Detector URL for teardown-time baseline reset. Default port 8080.
+  DETECTOR_URL: "http://shadowkube-detector.shadowkube-system.svc.cluster.local:8080"
+  # Persistence dir. Must be writable by the actuator SA.
+  ACTUATOR_STATE_DIR: "/var/lib/shadowkube/actuator"
+  # Dry-run by default — flip to true once iptables + cluster are verified.
+  ACT_ON_ALARM: "false"

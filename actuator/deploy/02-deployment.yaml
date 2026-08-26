@@ -1,0 +1,96 @@
+# Deployment: single-replica actuator in shadowkube-system.
+#
+# hostNetwork + privileged + hostPID are required because Phase 1 mutates
+# the cluster's iptables rules, and the actuator needs to read /proc/<pid>
+# for cgroup -> pod UID resolution in some paths.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowkube-actuator
+  namespace: shadowkube-system
+  labels:
+    app: shadowkube-actuator
+    group: actuator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadowkube-actuator
+  template:
+    metadata:
+      labels:
+        app: shadowkube-actuator
+        group: actuator
+    spec:
+      serviceAccountName: shadowkube-actuator
+      hostNetwork: true
+      hostPID: true
+      # Tolerate the lab's control-plane taint so we schedule on the
+      # single node we have in dev clusters.
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+          operator: Exists
+      containers:
+        - name: actuator
+          image: shadowkube-actuator:lab
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          envFrom:
+            - configMapKeyRef:
+                name: shadowkube-actuator-config
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            privileged: true
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              add: ["NET_ADMIN", "NET_RAW"]
+          volumeMounts:
+            - name: state
+              mountPath: /var/lib/shadowkube
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+      volumes:
+        - name: state
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shadowkube-actuator
+  namespace: shadowkube-system
+  labels:
+    app: shadowkube-actuator
+spec:
+  selector:
+    app: shadowkube-actuator
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+      protocol: TCP
