@@ -24,8 +24,8 @@ spec:
 
       containers:
         - name: probe
-          image: weather-app-probe:lab
-          imagePullPolicy: Never
+          image: shadowkube-probe:lab
+          imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
             capabilities:

@@ -76,18 +76,18 @@ func main() {
 	}
 
 	var kubeClient kubernetes.Interface
-	if cfg.ActOnAlarm {
-		rc, err := rest.InClusterConfig()
-		if err != nil {
-			log.Fatalf("actuator: in-cluster config: %v", err)
-		}
-		cs, err := kubernetes.NewForConfig(rc)
-		if err != nil {
-			log.Fatalf("actuator: client-go: %v", err)
-		}
-		kubeClient = cs
-	}
-	k := conversion.NewKube(kubeClient)
+rc, err := rest.InClusterConfig()
+if err == nil {
+    cs, err := kubernetes.NewForConfig(rc)
+    if err == nil {
+        kubeClient = cs
+    } else {
+        log.Printf("actuator: client-go init warning: %v", err)
+    }
+} else {
+    log.Printf("actuator: in-cluster config warning: %v", err)
+}
+k := conversion.NewKube(kubeClient)
 
 	sched := &teardown.Scheduler{
 		State:       stateStore,

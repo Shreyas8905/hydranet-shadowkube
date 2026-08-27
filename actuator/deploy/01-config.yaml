@@ -18,7 +18,7 @@ data:
   # DirectEliminate during testing.
   THRESHOLD_NODES: "1"
   # SHADOW_CLUSTER_IP is filled in by the operator (see .devcontainer/postcreate.sh).
-  SHADOW_CLUSTER_IP: "REPLACE_ME_AFTER_DOCKER_INSPECT"
+  SHADOW_CLUSTER_IP: "127.0.0.1:30081"
   # Port the shadow cluster's frontend NodePort listens on. k3d maps prod's
   # 30080 -> host:30080 and shadow's 30081 -> host:30081 because they share
   # the host's port range.

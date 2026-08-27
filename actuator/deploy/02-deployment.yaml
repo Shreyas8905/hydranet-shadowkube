@@ -40,7 +40,7 @@ spec:
               containerPort: 8081
               protocol: TCP
           envFrom:
-            - configMapKeyRef:
+            - configMapRef:
                 name: shadowkube-actuator-config
           env:
             - name: NODE_NAME
